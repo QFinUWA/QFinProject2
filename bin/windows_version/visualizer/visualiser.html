@@ -1,0 +1,2260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>MockExchange Data Visualizer</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 10px;
+            background-color: #000000;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background-color: #1a1a1a;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+        }
+        
+        .header-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 10px;
+            background-color: #000000;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            border: 1px solid #333;
+        }
+        
+        .file-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .file-input-group label {
+            font-size: 14px;
+            color: #ecf0f1;
+            white-space: nowrap;
+        }
+        
+        .file-input-group input[type="file"] {
+            padding: 3px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            background-color: #1a1a1a;
+            color: #ecf0f1;
+            font-size: 13px;
+            min-width: 200px;
+        }
+        
+        .file-status {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        
+        .status-loaded {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-empty {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .product-select-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+        
+        .product-select-group label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #ecf0f1;
+        }
+        
+        select {
+            padding: 6px 10px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            background-color: #1a1a1a;
+            color: #ecf0f1;
+            font-size: 13px;
+            min-width: 120px;
+        }
+        
+        .visualization-section {
+            margin-top: 15px;
+            height: 590px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #000000;
+            display: flex;
+            gap: 15px;
+            outline: none;
+        }
+        
+        .visualization-section:focus {
+            border-color: #444;
+            box-shadow: 0 0 0 1px rgba(68, 68, 68, 0.3);
+        }
+        
+        .chart-container {
+            flex: 1;
+            position: relative;
+            background-color: #000000;
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid #333;
+        }
+        
+        .orderbook-side {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .orderbook-container {
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #000000;
+            overflow: hidden;
+            flex: 1;
+        }
+        
+        .orderbook-title {
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 15px;
+            color: #ecf0f1;
+            font-size: 16px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+        
+        .orderbook-row {
+            display: grid;
+            grid-template-columns: 30px 75px 60px 75px 30px;
+            font-size: 13px;
+            padding: 3px 0;
+            align-items: center;
+            border-bottom: 1px solid #1a1a1a;
+            min-height: 24px;
+        }
+        
+        .skip-indicator {
+            border-top: 2px solid #adb5bd;
+            border-bottom: 2px solid #adb5bd;
+            background-color: #f8f9fa;
+        }
+        
+        .orderbook-header {
+            font-weight: 600;
+            border-bottom: 2px solid #333;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+            background-color: #0a0a0a;
+            margin: 0 -10px 10px -10px;
+            padding: 8px 10px;
+            color: #ecf0f1;
+        }
+        
+        .bid-size {
+            text-align: right;
+            color: #e74c3c;
+            font-weight: 500;
+            padding: 3px 8px;
+            margin-right: -8px;
+        }
+        
+        .bid-size.has-size {
+            background-color: rgba(231, 76, 60, 0.2);
+        }
+        
+        .price {
+            text-align: center;
+            color: #ecf0f1;
+            font-weight: 500;
+            padding: 3px 8px;
+        }
+        
+        .ask-size {
+            text-align: left;
+            color: #27ae60;
+            font-weight: 500;
+            padding: 3px 8px;
+            margin-left: -8px;
+        }
+        
+        .ask-size.has-size {
+            background-color: rgba(39, 174, 96, 0.2);
+        }
+        
+        .mid-price-row {
+            background-color: #1a1a1a;
+            font-weight: 600;
+            border: 1px solid #444;
+            margin: 2px -5px;
+            padding: 0 5px;
+        }
+        
+        .player-indicator {
+            height: 100%;
+            font-size: 11px;
+            text-align: center;
+            color: white;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .player-bid-indicator {
+            background-color: rgba(231, 76, 60, 0.8);
+        }
+        
+        .player-ask-indicator {
+            background-color: rgba(39, 174, 96, 0.8);
+        }
+        
+        .bid-size.player-owned {
+            background-color: rgba(231, 76, 60, 0.2);
+        }
+        
+        .ask-size.player-owned {
+            background-color: rgba(39, 174, 96, 0.2);
+        }
+        
+        .controls-container {
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .controls-container button {
+            padding: 8px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background-color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .controls-container button:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+        
+        .controls-container button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .timestamp-display {
+            font-weight: 600;
+            padding: 8px 20px;
+            background-color: #f0f0f0;
+            color: #333;
+            border-radius: 6px;
+            min-width: 120px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        
+        .placeholder {
+            text-align: center;
+            color: #ecf0f1;
+            padding: 100px 0;
+        }
+        
+        .analytics-section {
+            margin-top: 15px;
+            background-color: #1a1a1a;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+        }
+        
+        .analytics-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #000000;
+            border-radius: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+            border: 1px solid #333;
+        }
+        
+        .analytics-controls > div:first-child {
+            color: #ecf0f1;
+        }
+        
+        .product-checkboxes {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .product-checkboxes label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            color: #ecf0f1;
+        }
+        
+        .analytics-charts {
+            display: grid;
+            grid-template-rows: 450px 450px;
+            gap: 15px;
+        }
+
+        .multi-axis-chart {
+            margin-bottom: 15px;
+        }
+
+        .multi-axis-wrapper {
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #000000;
+            min-height: 400px;
+        }
+        
+        .chart-wrapper {
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #000000;
+        }
+        
+        .controls-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #000000;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border: 1px solid #333;
+        }
+        
+        .statistics-panel {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #000000;
+            border-radius: 6px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            border: 1px solid #333;
+        }
+        
+        .stat-item {
+            padding: 10px;
+            background-color: #1a1a1a;
+            border-radius: 4px;
+            border: 1px solid #444;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ecf0f1;
+        }
+        
+        .stat-value.positive {
+            color: #27ae60;
+        }
+        
+        .stat-value.negative {
+            color: #e74c3c;
+        }
+        
+        .error-message {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            color: #dc3545;
+            padding: 10px 15px;
+            background-color: #f8d7da;
+            border-radius: 4px;
+            display: none;
+            z-index: 1000;
+            max-width: 300px;
+        }
+        
+        /* Scrollbar styling for orderbook */
+        #orderbookContent::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #orderbookContent::-webkit-scrollbar-track {
+            background: #000000;
+            border-radius: 4px;
+        }
+        
+        #orderbookContent::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        
+        #orderbookContent::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* Firefox scrollbar styling */
+        #orderbookContent {
+            scrollbar-width: thin;
+            scrollbar-color: #333 #000000;
+            height: 460px;
+            overflow-y: auto;
+        }
+        
+        .player-messages-container {
+            margin-top: 8px;
+            padding: 6px 12px;
+            background-color: #0a0a0a;
+            border-radius: 4px;
+            border: 1px solid #2a2a2a;
+            height: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .player-messages-container:hover {
+            background-color: #151515;
+            border-color: #333;
+        }
+        
+        .player-message {
+            font-size: 10px;
+            color: #777;
+            line-height: 1.2;
+            font-family: monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            user-select: none;
+        }
+        
+        .no-message {
+            font-size: 10px;
+            color: #555;
+            font-style: italic;
+            font-family: monospace;
+            user-select: none;
+        }
+        
+        .message-expanded {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 8px;
+            margin-top: 2px;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            white-space: normal;
+            word-wrap: break-word;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        
+        .message-expanded .player-message {
+            white-space: normal;
+            overflow: visible;
+            text-overflow: unset;
+            color: #bbb;
+        }
+        
+        /* Theme toggle button - extremely subtle */
+        .theme-toggle {
+            width: 30px;
+            height: 30px;
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: auto;
+        }
+        
+        .theme-toggle:hover {
+            background-color: #2a2a2a;
+        }
+        
+        /* Light theme overrides */
+        body.light-theme { background-color: #f5f5f5; }
+        body.light-theme .container { background-color: white; }
+        body.light-theme .header-section { background-color: #f8f9fa; border-color: transparent; }
+        body.light-theme .visualization-section { background-color: #fafafa; border-color: #ddd; }
+        body.light-theme .analytics-section { background-color: white; }
+        body.light-theme .analytics-controls { background-color: #f8f9fa; border-color: transparent; }
+        body.light-theme .controls-top { background-color: #f8f9fa; border-color: transparent; }
+        body.light-theme .statistics-panel { background-color: #f8f9fa; border-color: transparent; }
+        body.light-theme .chart-container,
+        body.light-theme .orderbook-container { background-color: white; border-color: #e0e0e0; }
+        body.light-theme .chart-wrapper { background-color: #fafafa; border-color: #e0e0e0; }
+        body.light-theme .multi-axis-wrapper { background-color: #fafafa; border-color: #e0e0e0; }
+        body.light-theme .stat-item { background-color: white; border-color: #e0e0e0; }
+        body.light-theme .file-input-group input[type="file"],
+        body.light-theme select { background-color: white; border-color: #ddd; color: #333; }
+        body.light-theme .file-input-group label,
+        body.light-theme .product-select-group label { color: #555; }
+        body.light-theme .analytics-controls > div:first-child,
+        body.light-theme .product-checkboxes label { color: #333; }
+        body.light-theme .orderbook-title { color: #2c3e50; border-bottom-color: #ecf0f1; }
+        body.light-theme .orderbook-row { border-bottom-color: #f5f5f5; }
+        body.light-theme .orderbook-header { background-color: #f8f9fa; border-bottom-color: #e0e0e0; color: #333; }
+        body.light-theme .price { color: #495057; }
+        body.light-theme .mid-price-row { background-color: #e9ecef; border-color: #dee2e6; }
+        body.light-theme .stat-label { color: #666; }
+        body.light-theme .stat-value { color: #2c3e50; }
+        body.light-theme .placeholder { color: #999; }
+        body.light-theme .bid-size.has-size { background-color: rgba(231, 76, 60, 0.1); }
+        body.light-theme .ask-size.has-size { background-color: rgba(39, 174, 96, 0.1); }
+        body.light-theme .theme-toggle { background-color: #f0f0f0; border-color: #ddd; }
+        body.light-theme .theme-toggle:hover { background-color: #e0e0e0; }
+        body.light-theme #orderbookContent::-webkit-scrollbar-track { background: #f5f5f5; }
+        body.light-theme #orderbookContent::-webkit-scrollbar-thumb { background: #ccc; }
+        body.light-theme #orderbookContent::-webkit-scrollbar-thumb:hover { background: #999; }
+        body.light-theme #orderbookContent { scrollbar-color: #ccc #f5f5f5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-section">
+            <div class="file-input-group">
+                <label for="gameRecordFile">Game Record:</label>
+                <input type="file" id="gameRecordFile" accept=".csv">
+                <span id="gameRecordStatus" class="file-status status-empty">No file</span>
+            </div>
+            
+            <div class="file-input-group">
+                <label for="orderbookFile">Orderbook:</label>
+                <input type="file" id="orderbookFile" accept=".csv">
+                <span id="orderbookStatus" class="file-status status-empty">No file</span>
+            </div>
+            
+            <div class="file-input-group">
+                <label for="tradesFile">Trades:</label>
+                <input type="file" id="tradesFile" accept=".csv">
+                <span id="tradesStatus" class="file-status status-empty">No file</span>
+            </div>
+            
+            <button class="theme-toggle" id="themeToggle" title="Toggle theme"></button>
+            
+            <div class="product-select-group">
+                <label for="productSelect">Product:</label>
+                <select id="productSelect" disabled>
+                    <option value="">-- Load data --</option>
+                </select>
+                <label for="tickSizeSelect" style="margin-left: 20px;">Tick Size:</label>
+                <select id="tickSizeSelect">
+                    <option value="0.1">0.1</option>
+                    <option value="0.5" selected>0.5</option>
+                    <option value="1.0">1.0</option>
+                    <option value="2.0">2.0</option>
+                    <option value="5.0">5.0</option>
+                    <option value="10.0">10.0</option>
+                </select>
+                <label for="orderbookDepthSelect" style="margin-left: 20px;">Orderbook Depth:</label>
+                <select id="orderbookDepthSelect">
+                    <option value="3">3</option>
+                    <option value="5" selected>5</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="visualization-section">
+            <div class="placeholder">
+                Upload data files and select a product to view visualizations
+            </div>
+        </div>
+    </div>
+    
+    <div class="analytics-section" id="analyticsSection" style="display: none;">
+        <div class="analytics-controls">
+            <div style="font-weight: bold;">Analytics:</div>
+            <div class="product-checkboxes" id="productCheckboxes">
+                <!-- Checkboxes will be dynamically added here -->
+            </div>
+        </div>
+        <div class="multi-axis-chart">
+            <div class="multi-axis-wrapper">
+                <div id="multiAxisChart" style="width: 100%; height: 100%;"></div>
+            </div>
+        </div>
+        <div class="analytics-charts">
+            <div class="chart-wrapper">
+                <div id="positionsChart" style="width: 100%; height: 100%;"></div>
+            </div>
+            <div class="chart-wrapper">
+                <div id="pnlChart" style="width: 100%; height: 100%;"></div>
+            </div>
+        </div>
+        <div class="statistics-panel" id="statisticsPanel">
+            <!-- Statistics will be dynamically added here -->
+        </div>
+    </div>
+    
+    <div id="errorMessage" class="error-message"></div>
+    
+    <script>
+        // Global data storage
+        let orderbookData = null;
+        let tradesData = null;
+        let gameRecordData = null;
+        let availableProducts = new Set();
+        
+        // File input handlers
+        document.getElementById('orderbookFile').addEventListener('change', (e) => handleFileUpload(e, 'orderbook'));
+        document.getElementById('tradesFile').addEventListener('change', (e) => handleFileUpload(e, 'trades'));
+        document.getElementById('gameRecordFile').addEventListener('change', (e) => handleFileUpload(e, 'gameRecord'));
+        
+        // Product selection handler
+        document.getElementById('productSelect').addEventListener('change', handleProductChange);
+        
+        // Tick size selection handler
+        document.getElementById('tickSizeSelect').addEventListener('change', () => {
+            if (selectedProduct && currentTimestamp !== undefined) {
+                updateOrderbook(currentTimestamp);
+            }
+        });
+        
+        // Auto-blur dropdowns to prevent navigation interference
+        document.getElementById('tickSizeSelect').addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                e.target.blur();
+            }
+        });
+        
+        // Orderbook depth selection handler
+        document.getElementById('orderbookDepthSelect').addEventListener('change', () => {
+            if (selectedProduct && currentTimestamp !== undefined) {
+                updateOrderbook(currentTimestamp);
+            }
+        });
+        
+        // Auto-blur dropdowns to prevent navigation interference
+        document.getElementById('orderbookDepthSelect').addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                e.target.blur();
+            }
+        });
+        
+        // Add drag and drop support
+        setupDragAndDrop();
+        
+        // Theme toggle functionality
+        let currentTheme = localStorage.getItem('theme') || 'dark';
+        
+        const themeToggle = document.getElementById('themeToggle');
+        
+        // Apply saved theme on load
+        if (currentTheme === 'light') {
+            document.body.classList.add('light-theme');
+        }
+        
+        themeToggle.addEventListener('click', function() {
+            if (currentTheme === 'dark') {
+                currentTheme = 'light';
+                document.body.classList.add('light-theme');
+            } else {
+                currentTheme = 'dark';
+                document.body.classList.remove('light-theme');
+            }
+            localStorage.setItem('theme', currentTheme);
+            updateChartsForTheme();
+        });
+        
+        function updateChartsForTheme() {
+            const isDark = currentTheme === 'dark';
+            const bgColor = isDark ? '#000000' : 'white';
+            const gridColor = isDark ? '#333' : '#ddd';
+            const fontColor = isDark ? '#ecf0f1' : '#333';
+            const lineColor = isDark ? 'rgba(236, 240, 241, 0.5)' : 'rgba(0, 0, 0, 0.3)';
+            
+            // Update header section inline styles
+            const headerSection = document.querySelector('.header-section');
+            if (headerSection) {
+                if (isDark) {
+                    headerSection.style.backgroundColor = '#000000';
+                    headerSection.style.border = '1px solid #333';
+                } else {
+                    headerSection.style.backgroundColor = '#f8f9fa';
+                    headerSection.style.border = 'none';
+                }
+            }
+            
+            // Update main chart if it exists
+            if (document.getElementById('midPriceChart') && document.getElementById('midPriceChart')._fullLayout) {
+                Plotly.relayout('midPriceChart', {
+                    'plot_bgcolor': bgColor,
+                    'paper_bgcolor': bgColor,
+                    'font.color': fontColor,
+                    'xaxis.gridcolor': gridColor,
+                    'xaxis.color': fontColor,
+                    'yaxis.gridcolor': gridColor,
+                    'yaxis.color': fontColor,
+                    'shapes[0].line.color': lineColor
+                });
+            }
+            
+            // Update P&L chart
+            if (document.getElementById('pnlChart') && document.getElementById('pnlChart')._fullLayout) {
+                Plotly.relayout('pnlChart', {
+                    'plot_bgcolor': bgColor,
+                    'paper_bgcolor': bgColor,
+                    'font.color': fontColor,
+                    'xaxis.gridcolor': gridColor,
+                    'xaxis.color': fontColor,
+                    'yaxis.gridcolor': gridColor,
+                    'yaxis.color': fontColor
+                });
+            }
+            
+            // Update positions chart
+            if (document.getElementById('positionsChart') && document.getElementById('positionsChart')._fullLayout) {
+                Plotly.relayout('positionsChart', {
+                    'plot_bgcolor': bgColor,
+                    'paper_bgcolor': bgColor,
+                    'font.color': fontColor,
+                    'xaxis.gridcolor': gridColor,
+                    'xaxis.color': fontColor,
+                    'yaxis.gridcolor': gridColor,
+                    'yaxis.color': fontColor
+                });
+            }
+        }
+        
+        function handleFileUpload(event, dataType) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const csvData = parseCSV(e.target.result);
+                    
+                    // Store data based on type
+                    switch(dataType) {
+                        case 'orderbook':
+                            orderbookData = csvData;
+                            updateStatus('orderbookStatus', `${csvData.length} rows`);
+                            extractProductsFromOrderbook(csvData);
+                            break;
+                        case 'trades':
+                            tradesData = csvData;
+                            updateStatus('tradesStatus', `${csvData.length} rows`);
+                            extractProductsFromTrades(csvData);
+                            break;
+                        case 'gameRecord':
+                            gameRecordData = csvData;
+                            updateStatus('gameRecordStatus', `${csvData.length} rows`);
+                            extractProductsFromGameRecord(csvData);
+                            break;
+                    }
+                    
+                    updateProductDropdown();
+                    hideError();
+                } catch (error) {
+                    showError(`Error parsing ${dataType} file: ${error.message}`);
+                    updateStatus(`${dataType}Status`, 'Error', false);
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+        
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+            const data = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i];
+                const values = [];
+                let current = '';
+                let inQuotes = false;
+                
+                for (let j = 0; j < line.length; j++) {
+                    const char = line[j];
+                    
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        values.push(current.trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                values.push(current.trim());
+                
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index] || '';
+                });
+                data.push(row);
+            }
+            
+            return data;
+        }
+        
+        function extractProductsFromOrderbook(data) {
+            if (data.length > 0) {
+                data.forEach(row => {
+                    if (row.ticker) {
+                        availableProducts.add(row.ticker);
+                    }
+                });
+            }
+        }
+        
+        function extractProductsFromTrades(data) {
+            if (data.length > 0) {
+                data.forEach(row => {
+                    if (row.ticker) {
+                        availableProducts.add(row.ticker);
+                    }
+                });
+            }
+        }
+        
+        function extractProductsFromGameRecord(data) {
+            if (data.length > 0 && Object.keys(data[0]).length > 0) {
+                // Look for columns that are standalone product names (UEC, QFIN, GUILD)
+                // These appear after Realisation_ and Sentiment_ columns for each product
+                Object.keys(data[0]).forEach(key => {
+                    if (!key.includes('_') && key !== 'Loop' && key !== 'timestamp' && key !== '') {
+                        // Check if this is actually a product by looking for PlayerAlgorithm columns
+                        const playerColumn = `PlayerAlgorithm_${key}`;
+                        if (Object.keys(data[0]).includes(playerColumn)) {
+                            availableProducts.add(key);
+                        }
+                    }
+                });
+            }
+        }
+        
+        function updateProductDropdown() {
+            const select = document.getElementById('productSelect');
+            
+            // Enable if we have at least game record data
+            if (availableProducts.size === 0 && !gameRecordData) {
+                select.disabled = true;
+                select.innerHTML = '<option value="">-- No products found --</option>';
+                return;
+            }
+            
+            select.disabled = false;
+            select.innerHTML = '<option value="">-- Select a product --</option>';
+            
+            const sortedProducts = Array.from(availableProducts).sort();
+            sortedProducts.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product;
+                option.textContent = product;
+                select.appendChild(option);
+            });
+            
+            // Auto-select first product when data is loaded
+            if (sortedProducts.length > 0) {
+                select.value = sortedProducts[0];
+                handleProductChange({ target: select });
+            }
+        }
+        
+        let currentTimestamp = 0;
+        let selectedProduct = null;
+        
+        function handleProductChange(event) {
+            selectedProduct = event.target.value;
+            if (!selectedProduct) {
+                showPlaceholder();
+                return;
+            }
+            
+            // Reset timestamp
+            currentTimestamp = 0;
+            
+            // Create visualization
+            createVisualization();
+        }
+        
+        function createVisualization() {
+            const vizSection = document.querySelector('.visualization-section');
+            vizSection.innerHTML = `
+                <div class="chart-container">
+                    <div id="midPriceChart" style="width: 100%; height: 580px;"></div>
+                </div>
+                <div class="orderbook-side">
+                    <div class="orderbook-container">
+                        <div class="orderbook-title">Orderbook at Time <span id="orderbookTimestamp">0</span></div>
+                        <div class="orderbook-row orderbook-header">
+                            <div></div>
+                            <div class="bid-size">Bid Size</div>
+                            <div class="price">Price</div>
+                            <div class="ask-size">Ask Size</div>
+                            <div></div>
+                        </div>
+                        <div id="orderbookContent" style="height: 420px; overflow-y: auto; overflow-x: hidden;"></div>
+                    </div>
+                    <div class="player-messages-container">
+                        <div id="playerMessagesContent">
+                            <div class="no-message">messages: --</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Make visualization section focusable for keyboard navigation
+            vizSection.tabIndex = 0;
+            vizSection.focus();
+            
+            // Add click handler to regain focus when clicking in visualization area
+            vizSection.addEventListener('click', () => {
+                vizSection.focus();
+            });
+            
+            plotMidPrices();
+            
+            // Find first timestamp with orderbook data
+            // Note: orderbook timestamps are offset by 1 from game record
+            let firstOrderbookTimestamp = 0;
+            if (orderbookData && selectedProduct) {
+                for (let i = 0; i < gameRecordData.length; i++) {
+                    const hasOrderbook = orderbookData.some(row => 
+                        parseInt(row.timestamp) === (i + 1) && row.ticker === selectedProduct
+                    );
+                    if (hasOrderbook) {
+                        firstOrderbookTimestamp = i;
+                        break;
+                    }
+                }
+            }
+            
+            currentTimestamp = firstOrderbookTimestamp;
+            updateOrderbook(firstOrderbookTimestamp);
+            updateVerticalLine(firstOrderbookTimestamp);
+            updateTimestampDisplay();
+            showAnalytics();
+        }
+        
+        function getThemeColors() {
+            const isDark = currentTheme === 'dark';
+            return {
+                bgColor: isDark ? '#000000' : 'white',
+                gridColor: isDark ? '#333' : '#ddd',
+                fontColor: isDark ? '#ecf0f1' : '#333'
+            };
+        }
+        
+        function plotMidPrices() {
+            if (!gameRecordData || !selectedProduct) return;
+            
+            // Extract timestamps and mid prices
+            const timestamps = [];
+            const midPrices = [];
+            
+            gameRecordData.forEach(row => {
+                if (row[selectedProduct] && row[selectedProduct] !== '') {
+                    timestamps.push(parseInt(row.Loop || row.timestamp || timestamps.length));
+                    midPrices.push(parseFloat(row[selectedProduct]));
+                }
+            });
+            
+            // Create the main price trace
+            const traces = [{
+                x: timestamps,
+                y: midPrices,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Mid Price',
+                line: { color: '#1f77b4' }
+            }];
+            
+            // Add trades if available
+            if (tradesData) {
+                const buyTrades = { x: [], y: [], text: [] };
+                const sellTrades = { x: [], y: [], text: [] };
+                
+                console.log(`DEBUG: Plotting trades for selected product: "${selectedProduct}"`);
+                console.log(`DEBUG: Total trades in tradesData: ${tradesData.length}`);
+                
+                let matchCount = 0;
+                tradesData.forEach(trade => {
+                    // Debug log each trade's ticker and bot
+                    if (matchCount < 5) { // Only log first 5 to avoid spam
+                        console.log(`DEBUG: Trade ticker: "${trade.ticker}" vs selected: "${selectedProduct}", agg_bot: "${trade.agg_bot}", rest_bot: "${trade.rest_bot}"`);
+                    }
+                    
+                    // Check if PlayerAlgorithm is involved in this trade (either as aggressor or resting)
+                    const isPlayerTrade = trade.ticker === selectedProduct && 
+                                         (trade.agg_bot === 'PlayerAlgorithm' || trade.rest_bot === 'PlayerAlgorithm');
+                    
+                    if (isPlayerTrade) {
+                        matchCount++;
+                        console.log(`DEBUG: MATCH found! Trade ${matchCount}: ${trade.ticker} at ${trade.timestamp}`);
+                        
+                        // Use the timestamp directly without offset
+                        const timestamp = parseInt(trade.timestamp);
+                        const price = parseFloat(trade.price);
+                        
+                        let playerSide;
+                        if (trade.agg_bot === 'PlayerAlgorithm') {
+                            // When PlayerAlgorithm is the aggressor, trade.side shows what PlayerAlgorithm did
+                            playerSide = trade.side;
+                        } else {
+                            // When PlayerAlgorithm is rest_bot, trade.side shows what the aggressor did
+                            // So we need to invert it to show what PlayerAlgorithm actually did
+                            playerSide = trade.side === 'buy' ? 'sell' : 'buy';
+                        }
+                        
+                        const hoverText = `PlayerAlgorithm ${playerSide}<br>Price: ${price}<br>Size: ${trade.size}`;
+                        
+                        if (playerSide === 'buy') {
+                            buyTrades.x.push(timestamp);
+                            buyTrades.y.push(price);
+                            buyTrades.text.push(hoverText);
+                        } else {
+                            sellTrades.x.push(timestamp);
+                            sellTrades.y.push(price);
+                            sellTrades.text.push(hoverText);
+                        }
+                    }
+                });
+                
+                console.log(`DEBUG: Total matching trades found: ${matchCount}`);
+                console.log(`DEBUG: Buy trades: ${buyTrades.x.length}, Sell trades: ${sellTrades.x.length}`);
+                
+                if (buyTrades.x.length > 0) {
+                    traces.push({
+                        x: buyTrades.x,
+                        y: buyTrades.y,
+                        text: buyTrades.text,
+                        type: 'scatter',
+                        mode: 'markers',
+                        name: 'Buy Trades',
+                        marker: { color: '#0dc400', size: 6 },
+                        hovertemplate: '%{text}<extra></extra>'
+                    });
+                }
+                
+                if (sellTrades.x.length > 0) {
+                    traces.push({
+                        x: sellTrades.x,
+                        y: sellTrades.y,
+                        text: sellTrades.text,
+                        type: 'scatter',
+                        mode: 'markers',
+                        name: 'Sell Trades',
+                        marker: { color: '#c40000', size: 6 },
+                        hovertemplate: '%{text}<extra></extra>'
+                    });
+                }
+            }
+            
+            // Calculate appropriate y-axis range and ticks
+            const minY = Math.min(...midPrices);
+            const maxY = Math.max(...midPrices);
+            const yRange = maxY - minY;
+            
+            // Determine appropriate tick spacing based on range
+            let tickSpacing = 1.0;
+            if (yRange > 10) {
+                tickSpacing = Math.ceil(yRange / 10);
+            }
+            
+            const layout = {
+                title: `${selectedProduct} Mid Price`,
+                xaxis: { 
+                    title: 'Timestamp',
+                    fixedrange: false,
+                    showgrid: true,
+                    gridcolor: getThemeColors().gridColor,
+                    zeroline: false,
+                    color: getThemeColors().fontColor
+                },
+                yaxis: { 
+                    title: 'Price',
+                    dtick: tickSpacing,
+                    tick0: Math.floor(minY),
+                    fixedrange: false,
+                    showgrid: true,
+                    gridcolor: getThemeColors().gridColor,
+                    zeroline: false,
+                    tickformat: '.1f',
+                    color: getThemeColors().fontColor
+                },
+                dragmode: 'zoom',  // Set default to zoom instead of pan
+                shapes: [],
+                plot_bgcolor: getThemeColors().bgColor,
+                paper_bgcolor: getThemeColors().bgColor,
+                font: { color: getThemeColors().fontColor },
+                legend: {
+                    orientation: 'h',
+                    x: 0.5,
+                    y: 1.0,
+                    xanchor: 'center',
+                    yanchor: 'bottom',
+                    bgcolor: 'transparent',
+                    borderwidth: 0
+                }
+            };
+            
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                modeBarButtonsToRemove: ['select2d', 'lasso2d'],
+                displaylogo: false
+            };
+            
+            Plotly.newPlot('midPriceChart', traces, layout, config);
+            
+            // Add click handler
+            document.getElementById('midPriceChart').on('plotly_click', function(data) {
+                if (data.points.length > 0) {
+                    const clickedTimestamp = data.points[0].x;
+                    currentTimestamp = clickedTimestamp;
+                    updateTimestampDisplay();
+                    updateOrderbook(clickedTimestamp);
+                    updateVerticalLine(clickedTimestamp);
+                }
+            });
+            
+            // Add keyboard event listener
+            document.addEventListener('keydown', handleKeyPress);
+        }
+        
+        function updateVerticalLine(timestamp) {
+            const isDark = currentTheme === 'dark';
+            const lineColor = isDark ? 'rgba(236, 240, 241, 0.5)' : 'rgba(0, 0, 0, 0.3)';
+            
+            const layout = {
+                shapes: [{
+                    type: 'line',
+                    x0: timestamp,
+                    x1: timestamp,
+                    y0: 0,
+                    y1: 1,
+                    yref: 'paper',
+                    line: {
+                        color: lineColor,
+                        width: 2,
+                        dash: 'dot'
+                    }
+                }]
+            };
+            
+            Plotly.relayout('midPriceChart', layout);
+        }
+        
+        function changeTimestamp(delta) {
+            const maxTimestamp = gameRecordData ? gameRecordData.length - 1 : 0;
+            currentTimestamp = Math.max(0, Math.min(currentTimestamp + delta, maxTimestamp));
+            updateTimestampDisplay();
+            updateOrderbook(currentTimestamp);
+            updateVerticalLine(currentTimestamp);
+        }
+        
+        function handleKeyPress(event) {
+            // Don't handle keys if user is interacting with form elements or dropdowns are focused
+            const activeElement = document.activeElement;
+            if (activeElement && (
+                activeElement.tagName === 'SELECT' || 
+                activeElement.tagName === 'INPUT' ||
+                activeElement.tagName === 'BUTTON' ||
+                activeElement.id === 'productSelect' ||
+                activeElement.id === 'tickSizeSelect' ||
+                activeElement.id === 'orderbookDepthSelect'
+            )) {
+                return;
+            }
+            
+            if (event.key === 'ArrowLeft') {
+                event.preventDefault();
+                // Blur any focused elements to prevent dropdown interference
+                if (document.activeElement) {
+                    document.activeElement.blur();
+                }
+                changeTimestamp(-1);
+            } else if (event.key === 'ArrowRight') {
+                event.preventDefault();
+                // Blur any focused elements to prevent dropdown interference
+                if (document.activeElement) {
+                    document.activeElement.blur();
+                }
+                changeTimestamp(1);
+            }
+        }
+        
+        function updateTimestampDisplay() {
+            const orderbookTimestamp = document.getElementById('orderbookTimestamp');
+            if (orderbookTimestamp) {
+                orderbookTimestamp.textContent = currentTimestamp;
+            }
+        }
+        
+        function updateOrderbook(timestamp) {
+            if (!orderbookData || !selectedProduct) return;
+            
+            // Filter orderbook data for the selected timestamp and product
+            // The orderbook data is offset by 1 from the game record mid prices,
+            // so we need to look at timestamp+1 in the orderbook to match the chart
+            const filteredData = orderbookData.filter(row => 
+                parseInt(row.timestamp) === (timestamp + 1) && row.ticker === selectedProduct
+            );
+            
+            // Get mid price from game record
+            const midPrice = getMidPrice(timestamp);
+            
+            // Generate orderbook display
+            const orderbookContent = document.getElementById('orderbookContent');
+            orderbookContent.innerHTML = '';
+            
+            // Group by price level
+            const bids = filteredData.filter(row => row.side === 'bid').sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+            const asks = filteredData.filter(row => row.side === 'ask').sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+            
+            // Calculate actual mid price based on best bid and ask
+            let actualMidPrice = midPrice;
+            if (bids.length > 0 && asks.length > 0) {
+                actualMidPrice = (parseFloat(bids[0].price) + parseFloat(asks[0].price)) / 2;
+            }
+            
+            // Get best N bids and asks based on selected depth
+            const orderbookDepth = parseInt(document.getElementById('orderbookDepthSelect').value);
+            const bestBids = bids.slice(0, orderbookDepth);
+            const bestAsks = asks.slice(0, orderbookDepth);
+            
+            // Determine price range from best 5
+            let minPrice = Infinity;
+            let maxPrice = -Infinity;
+            
+            bestBids.forEach(b => {
+                const price = parseFloat(b.price);
+                minPrice = Math.min(minPrice, price);
+                maxPrice = Math.max(maxPrice, price);
+            });
+            
+            bestAsks.forEach(a => {
+                const price = parseFloat(a.price);
+                minPrice = Math.min(minPrice, price);
+                maxPrice = Math.max(maxPrice, price);
+            });
+            
+            // Generate price levels - only show prices with actual orders
+            const priceSet = new Set();
+
+            // Add all actual order prices only
+            bestBids.forEach(b => priceSet.add(parseFloat(b.price)));
+            bestAsks.forEach(a => priceSet.add(parseFloat(a.price)));
+
+            // Add the exact mid price level only if there are orders
+            if (actualMidPrice && (bestBids.length > 0 || bestAsks.length > 0)) {
+                const midLevel = parseFloat(actualMidPrice.toFixed(1));
+                // Only add mid price if it's not already covered by existing orders
+                if (!priceSet.has(midLevel)) {
+                    priceSet.add(midLevel);
+                }
+            }
+            
+            const sortedPrices = Array.from(priceSet).sort((a, b) => b - a);
+            
+            // Find the index to center on
+            let centerIndex = 0;
+            if (actualMidPrice) {
+                for (let i = 0; i < sortedPrices.length; i++) {
+                    if (sortedPrices[i] <= actualMidPrice) {
+                        centerIndex = i;
+                        break;
+                    }
+                }
+            }
+            
+            // Find the price level for the exact mid price (0.1 precision)
+            const midPriceLevel = actualMidPrice ? parseFloat(actualMidPrice.toFixed(1)) : null;
+            
+            // Create all rows
+            const allRows = [];
+            let midPriceRowIndex = -1;
+            
+            sortedPrices.forEach((price, index) => {
+                const priceStr = price.toFixed(1);
+
+                // Get all bids and asks at this price level
+                const bidsAtPrice = bestBids.filter(b => parseFloat(b.price).toFixed(1) === priceStr);
+                const asksAtPrice = bestAsks.filter(a => parseFloat(a.price).toFixed(1) === priceStr);
+
+                // Calculate total sizes and player portions
+                let totalBidSize = 0;
+                let playerBidSize = 0;
+                bidsAtPrice.forEach(bid => {
+                    const size = parseInt(bid.size);
+                    totalBidSize += size;
+                    if (bid.bot_name === 'PlayerAlgorithm') {
+                        playerBidSize += size;
+                    }
+                });
+
+                let totalAskSize = 0;
+                let playerAskSize = 0;
+                asksAtPrice.forEach(ask => {
+                    const size = parseInt(ask.size);
+                    totalAskSize += size;
+                    if (ask.bot_name === 'PlayerAlgorithm') {
+                        playerAskSize += size;
+                    }
+                });
+
+                // Check if this is the mid price level
+                const isMidPriceLevel = midPriceLevel !== null && Math.abs(price - midPriceLevel) < 0.001;
+
+                // Only show this row if it has orders OR is the mid price level
+                if (totalBidSize > 0 || totalAskSize > 0 || isMidPriceLevel) {
+                    const row = document.createElement('div');
+                    row.className = 'orderbook-row';
+
+                    // Mark the exact mid price row (0.1 precision)
+                    if (isMidPriceLevel) {
+                        row.classList.add('mid-price-row');
+                        midPriceRowIndex = allRows.length; // Use allRows.length since we're only adding rows with data
+                    }
+
+                    // Check if player owns 100% of the orders
+                    const bidFullyOwned = totalBidSize > 0 && playerBidSize === totalBidSize;
+                    const askFullyOwned = totalAskSize > 0 && playerAskSize === totalAskSize;
+
+                    // Create bid indicator HTML - always filled 100% if player has any size
+                    let bidIndicatorHtml = '<div></div>';
+                    if (playerBidSize > 0) {
+                        bidIndicatorHtml = `<div class="player-indicator player-bid-indicator">${playerBidSize}</div>`;
+                    }
+
+                    // Create ask indicator HTML - always filled 100% if player has any size
+                    let askIndicatorHtml = '<div></div>';
+                    if (playerAskSize > 0) {
+                        askIndicatorHtml = `<div class="player-indicator player-ask-indicator">${playerAskSize}</div>`;
+                    }
+
+                    // Add player-owned class to main columns if 100% owned
+                    const bidSizeClass = `bid-size${totalBidSize > 0 ? ' has-size' : ''}${bidFullyOwned ? ' player-owned' : ''}`;
+                    const askSizeClass = `ask-size${totalAskSize > 0 ? ' has-size' : ''}${askFullyOwned ? ' player-owned' : ''}`;
+
+                    row.innerHTML = `
+                        ${bidIndicatorHtml}
+                        <div class="${bidSizeClass}">${totalBidSize > 0 ? totalBidSize : ''}</div>
+                        <div class="price">${priceStr}</div>
+                        <div class="${askSizeClass}">${totalAskSize > 0 ? totalAskSize : ''}</div>
+                        ${askIndicatorHtml}
+                    `;
+
+                    allRows.push({ row, price });
+                }
+            });
+            
+            // Add all rows to the container
+            allRows.forEach(({ row }) => {
+                orderbookContent.appendChild(row);
+            });
+            
+            // Scroll to center the mid price row
+            setTimeout(() => {
+                const container = document.getElementById('orderbookContent');
+                if (midPriceRowIndex >= 0 && container.children.length > midPriceRowIndex) {
+                    // Force layout calculation
+                    container.scrollTop = 0;
+                    
+                    // Get all measurements after reset
+                    const allRowElements = Array.from(container.children);
+                    const targetRow = allRowElements[midPriceRowIndex];
+                    
+                    if (targetRow) {
+                        // Calculate exact position
+                        let totalHeight = 0;
+                        for (let i = 0; i < midPriceRowIndex; i++) {
+                            totalHeight += allRowElements[i].offsetHeight;
+                        }
+                        
+                        const rowHeight = targetRow.offsetHeight;
+                        const containerHeight = container.clientHeight;
+                        
+                        // Center the row exactly
+                        const scrollPosition = totalHeight + (rowHeight / 2) - (containerHeight / 2);
+                        container.scrollTop = Math.max(0, scrollPosition);
+                    }
+                }
+            }, 100);
+            
+            // Update player messages for this timestamp
+            updatePlayerMessages(timestamp);
+        }
+        
+        function updatePlayerMessages(timestamp) {
+            const messagesContent = document.getElementById('playerMessagesContent');
+            const messagesContainer = document.querySelector('.player-messages-container');
+            if (!gameRecordData || !messagesContent) return;
+            
+            // Find the message for this timestamp
+            // Try both timestamp and Loop columns for compatibility
+            let gameRecordRow = gameRecordData.find(row => 
+                parseInt(row.timestamp || row.Loop) === timestamp
+            );
+            
+            // If not found, try timestamp + 1 (orderbook offset)
+            if (!gameRecordRow) {
+                gameRecordRow = gameRecordData.find(row => 
+                    parseInt(row.timestamp || row.Loop) === (timestamp + 1)
+                );
+            }
+            
+            // If still not found, try timestamp - 1 
+            if (!gameRecordRow) {
+                gameRecordRow = gameRecordData.find(row => 
+                    parseInt(row.timestamp || row.Loop) === (timestamp - 1)
+                );
+            }
+            
+            if (gameRecordRow && gameRecordRow['PlayerAlgorithm_message'] && gameRecordRow['PlayerAlgorithm_message'].trim() !== '') {
+                // Remove quotes if present and clean the message
+                let message = gameRecordRow['PlayerAlgorithm_message'].replace(/^"|"$/g, '').trim();
+                messagesContent.innerHTML = `
+                    <div class="player-message" title="Click to expand">messages: ${message}</div>
+                `;
+                
+                // Add click handler for expansion
+                messagesContainer.onclick = function(e) {
+                    e.stopPropagation();
+                    toggleMessageExpansion(message);
+                };
+            } else {
+                messagesContent.innerHTML = `
+                    <div class="no-message">messages: --</div>
+                `;
+                messagesContainer.onclick = null;
+            }
+        }
+        
+        function toggleMessageExpansion(message) {
+            const container = document.querySelector('.player-messages-container');
+            let expanded = container.querySelector('.message-expanded');
+            
+            if (expanded) {
+                // Close expansion
+                expanded.remove();
+            } else {
+                // Open expansion
+                const expandedDiv = document.createElement('div');
+                expandedDiv.className = 'message-expanded';
+                expandedDiv.innerHTML = `<div class="player-message">${message}</div>`;
+                container.appendChild(expandedDiv);
+                
+                // Close when clicking elsewhere
+                setTimeout(() => {
+                    document.addEventListener('click', function closeExpansion(e) {
+                        if (!container.contains(e.target)) {
+                            expandedDiv.remove();
+                            document.removeEventListener('click', closeExpansion);
+                        }
+                    });
+                }, 100);
+            }
+        }
+        
+        function getMidPrice(timestamp) {
+            if (!gameRecordData || !selectedProduct) return null;
+            
+            const row = gameRecordData.find(r => 
+                parseInt(r.Loop || r.timestamp || 0) === timestamp
+            );
+            
+            return row && row[selectedProduct] ? parseFloat(row[selectedProduct]) : null;
+        }
+        
+        function updateStatus(statusId, message, success = true) {
+            const statusElement = document.getElementById(statusId);
+            statusElement.textContent = message;
+            statusElement.className = success ? 'file-status status-loaded' : 'file-status status-empty';
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        function hideError() {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.style.display = 'none';
+        }
+        
+        function showPlaceholder() {
+            const vizSection = document.querySelector('.visualization-section');
+            vizSection.innerHTML = '<div class="placeholder">Upload data files and select a product to view visualizations</div>';
+        }
+        
+        function setupDragAndDrop() {
+            const headerSection = document.querySelector('.header-section');
+            
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                headerSection.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            // Highlight drop area when item is dragged over it
+            ['dragenter', 'dragover'].forEach(eventName => {
+                headerSection.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                headerSection.addEventListener(eventName, unhighlight, false);
+            });
+            
+            // Handle dropped files
+            headerSection.addEventListener('drop', handleDrop, false);
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            function highlight(e) {
+                headerSection.style.backgroundColor = '#e8eaf6';
+                headerSection.style.border = '2px dashed #667eea';
+            }
+            
+            function unhighlight(e) {
+                if (document.body.classList.contains('light-theme')) {
+                    headerSection.style.backgroundColor = '#f8f9fa';
+                    headerSection.style.border = 'none';
+                } else {
+                    headerSection.style.backgroundColor = '#000000';
+                    headerSection.style.border = '1px solid #333';
+                }
+            }
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                handleFiles(files);
+            }
+            
+            function handleFiles(files) {
+                // Process all files at once
+                const fileArray = [...files];
+                
+                fileArray.forEach(file => {
+                    const fileName = file.name.toLowerCase();
+                    
+                    // More flexible matching
+                    if (fileName.includes('orderbook') || fileName === 'log_orderbook_data.csv') {
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        document.getElementById('orderbookFile').files = dataTransfer.files;
+                        handleFileUpload({ target: { files: [file] } }, 'orderbook');
+                    } else if (fileName.includes('trade') || fileName === 'log_trades_data.csv') {
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        document.getElementById('tradesFile').files = dataTransfer.files;
+                        handleFileUpload({ target: { files: [file] } }, 'trades');
+                    } else if (fileName.includes('game') && fileName.includes('record') || 
+                             fileName === 'log_game_record.csv' || 
+                             fileName === 'game_record.csv') {
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        document.getElementById('gameRecordFile').files = dataTransfer.files;
+                        handleFileUpload({ target: { files: [file] } }, 'gameRecord');
+                    }
+                });
+                
+                // Show error only if no files were matched
+                const matchedCount = fileArray.filter(file => {
+                    const fn = file.name.toLowerCase();
+                    return fn.includes('orderbook') || fn.includes('trade') || 
+                           (fn.includes('game') && fn.includes('record')) ||
+                           fn === 'log_orderbook_data.csv' || fn === 'log_trades_data.csv' || 
+                           fn === 'log_game_record.csv' || fn === 'game_record.csv';
+                }).length;
+                
+                if (matchedCount === 0) {
+                    showError('No recognized files found. Expected files containing "orderbook", "trade", or "game_record" in their names.');
+                }
+            }
+        }
+        
+        // Analytics functions
+        function showAnalytics() {
+            if (!gameRecordData || availableProducts.size === 0) return;
+            
+            const analyticsSection = document.getElementById('analyticsSection');
+            analyticsSection.style.display = 'block';
+            
+            // Create product checkboxes
+            const checkboxContainer = document.getElementById('productCheckboxes');
+            checkboxContainer.innerHTML = '';
+            
+            Array.from(availableProducts).sort().forEach(product => {
+                const label = document.createElement('label');
+                label.innerHTML = `
+                    <input type="checkbox" value="${product}" checked onchange="updateAnalyticsCharts()">
+                    ${product}
+                `;
+                checkboxContainer.appendChild(label);
+            });
+            
+            updateAnalyticsCharts();
+        }
+        
+        function updateAnalyticsCharts() {
+            if (!gameRecordData) return;
+            
+            // Get selected products from checkboxes
+            const selectedProducts = [];
+            document.querySelectorAll('#productCheckboxes input[type="checkbox"]:checked').forEach(cb => {
+                selectedProducts.push(cb.value);
+            });
+            
+            plotMultiAxisOverlay(selectedProducts);
+            plotPositions(selectedProducts);
+            plotPnL(selectedProducts);
+            calculateStatistics(selectedProducts);
+
+            // Set up synchronization after all charts are created
+            synchronizeCharts();
+        }
+        
+        function calculatePnL(product, data) {
+            const pnl = [];
+            const timestamps = [];
+            
+            // Check if this product actually has any trading activity
+            let hasTrading = false;
+            for (let row of data) {
+                const position = parseFloat(row[`PlayerAlgorithm_${product}`] || 0);
+                if (position !== 0) {
+                    hasTrading = true;
+                    break;
+                }
+            }
+            
+            // If no trading in this product, return zeros
+            if (!hasTrading) {
+                data.forEach(row => {
+                    timestamps.push(parseInt(row.Loop || row.timestamp || 0));
+                    pnl.push(0);
+                });
+                return { timestamps, pnl };
+            }
+            
+            // For products with actual trading, calculate proper P&L
+            let cumulativePnL = 0;
+            let previousPosition = 0;
+            let previousMidPrice = 0;
+            let previousCash = 0;
+            
+            data.forEach((row, index) => {
+                const timestamp = parseInt(row.Loop || row.timestamp || 0);
+                timestamps.push(timestamp);
+                
+                const position = parseFloat(row[`PlayerAlgorithm_${product}`] || 0);
+                const midPrice = parseFloat(row[product] || 0);
+                const cash = parseFloat(row['PlayerAlgorithm_Cash'] || 0);
+                
+                if (index === 0) {
+                    // First row - initialize
+                    previousPosition = position;
+                    previousMidPrice = midPrice;
+                    previousCash = cash;
+                    cumulativePnL = cash + position * midPrice;
+                } else {
+                    // For products with trading, include both position and cash changes
+                    cumulativePnL = cash + position * midPrice;
+                    
+                    // Update for next iteration
+                    previousPosition = position;
+                    previousMidPrice = midPrice;
+                    previousCash = cash;
+                }
+                
+                pnl.push(cumulativePnL);
+            });
+            
+            return { timestamps, pnl };
+        }
+        
+        function plotPnL(selectedProducts) {
+            const traces = [];
+            let allTimestamps = [];
+
+            // Get timestamps from the first product (they should all be the same)
+            if (selectedProducts.length > 0) {
+                const { timestamps } = calculatePnL(selectedProducts[0], gameRecordData);
+                allTimestamps = timestamps;
+            }
+
+            // Calculate total P&L across all selected products
+            const totalPnL = new Array(allTimestamps.length).fill(0);
+            selectedProducts.forEach(product => {
+                const { pnl } = calculatePnL(product, gameRecordData);
+                pnl.forEach((value, idx) => {
+                    totalPnL[idx] += value;
+                });
+            });
+
+            // Add only the Total P&L trace
+            traces.push({
+                x: allTimestamps,
+                y: totalPnL,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Total P&L',
+                line: { width: 3, color: '#2c3e50' }
+            });
+            
+            const layout = {
+                title: 'P&L Over Time',
+                xaxis: { 
+                    title: 'Timestamp',
+                    gridcolor: getThemeColors().gridColor,
+                    color: getThemeColors().fontColor
+                },
+                yaxis: { 
+                    title: 'P&L',
+                    gridcolor: getThemeColors().gridColor,
+                    color: getThemeColors().fontColor
+                },
+                showlegend: true,
+                height: 430,
+                margin: { t: 40, r: 20, b: 40, l: 60 },
+                plot_bgcolor: getThemeColors().bgColor,
+                paper_bgcolor: getThemeColors().bgColor,
+                font: { color: getThemeColors().fontColor }
+            };
+            
+            Plotly.newPlot('pnlChart', traces, layout);
+        }
+        
+        function plotPositions(selectedProducts) {
+            const traces = [];
+            
+            // Define positions chart colors - start with green
+            const positionColors = ['#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#34495e', '#16a085'];
+            
+            selectedProducts.forEach((product, index) => {
+                const timestamps = [];
+                const positions = [];
+                
+                gameRecordData.forEach(row => {
+                    timestamps.push(parseInt(row.Loop || row.timestamp || 0));
+                    positions.push(parseFloat(row[`PlayerAlgorithm_${product}`] || 0));
+                });
+                
+                traces.push({
+                    x: timestamps,
+                    y: positions,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: product,
+                    line: { 
+                        width: 2,
+                        color: positionColors[index % positionColors.length]
+                    }
+                });
+            });
+            
+            const layout = {
+                title: 'Positions Over Time',
+                xaxis: { 
+                    title: 'Timestamp',
+                    gridcolor: getThemeColors().gridColor,
+                    color: getThemeColors().fontColor
+                },
+                yaxis: { 
+                    title: 'Position',
+                    gridcolor: getThemeColors().gridColor,
+                    color: getThemeColors().fontColor
+                },
+                showlegend: true,
+                height: 430,
+                margin: { t: 40, r: 20, b: 40, l: 60 },
+                plot_bgcolor: getThemeColors().bgColor,
+                paper_bgcolor: getThemeColors().bgColor,
+                font: { color: getThemeColors().fontColor }
+            };
+            
+            Plotly.newPlot('positionsChart', traces, layout);
+        }
+
+        function plotMultiAxisOverlay(selectedProducts) {
+            if (!gameRecordData || selectedProducts.length === 0) return;
+
+            const numProducts = selectedProducts.length;
+            const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#34495e'];
+
+            // Initialize traces array
+            const traces = [];
+
+            // Create overlayed traces with separate y-axes
+            selectedProducts.forEach((product, index) => {
+                const timestamps = [];
+                const midPrices = [];
+
+                gameRecordData.forEach(row => {
+                    if (row[product] && row[product] !== '') {
+                        timestamps.push(parseInt(row.Loop || row.timestamp || timestamps.length));
+                        midPrices.push(parseFloat(row[product]));
+                    }
+                });
+
+                if (timestamps.length > 0) {
+                    // Each trace gets its own y-axis
+                    const yaxisName = index === 0 ? 'y' : `y${index + 1}`;
+
+                    traces.push({
+                        x: timestamps,
+                        y: midPrices,
+                        type: 'scatter',
+                        mode: 'lines',
+                        name: product,
+                        yaxis: yaxisName,
+                        line: {
+                            color: colors[index % colors.length],
+                            width: 2
+                        },
+                        hovertemplate: `${product}: %{y:.2f}<extra></extra>`
+                    });
+                }
+            });
+
+            // Create layout with multiple y-axes positioned side by side
+            const layout = {
+                title: 'Underlying Price Comparison',
+                xaxis: {
+                    title: 'Timestamp',
+                    gridcolor: getThemeColors().gridColor,
+                    color: getThemeColors().fontColor
+                },
+                height: 400,
+                margin: { t: 50, r: 50, b: 50, l: 80 },
+                plot_bgcolor: getThemeColors().bgColor,
+                paper_bgcolor: getThemeColors().bgColor,
+                font: { color: getThemeColors().fontColor },
+                hovermode: 'x unified',
+                showlegend: true,
+                legend: {
+                    x: 0,
+                    y: 1,
+                    orientation: 'h',
+                    bgcolor: 'rgba(0,0,0,0)',
+                    font: { size: 12 }
+                }
+            };
+
+            // Configure y-axes for overlayed display
+            const axisWidth = 0.9 / numProducts;  // Share 90% of the width
+            const axisGap = 0.02; // Small gap between axes
+
+            selectedProducts.forEach((product, index) => {
+                const yaxisName = index === 0 ? 'yaxis' : `yaxis${index + 1}`;
+
+                layout[yaxisName] = {
+                    title: {
+                        text: product,
+                        font: {
+                            color: colors[index % colors.length],
+                            size: 12
+                        }
+                    },
+                    titlefont: {
+                        color: colors[index % colors.length]
+                    },
+                    tickfont: {
+                        color: getThemeColors().fontColor,
+                        size: 10
+                    },
+                    gridcolor: getThemeColors().gridColor,
+                    showgrid: index === 0, // Only show grid for first axis
+                    overlaying: index > 0 ? 'y' : undefined,
+                    side: index === 0 ? 'left' : 'right',
+                    position: index === 0 ? undefined : 0.95 - (index - 1) * 0.05,
+                    anchor: index > 0 ? 'free' : undefined
+                };
+            });
+
+            Plotly.newPlot('multiAxisChart', traces, layout);
+        }
+
+        let chartsSynced = false;
+        
+        function synchronizeCharts() {
+            // Prevent multiple event listener registrations
+            if (chartsSynced) return;
+
+            const pnlChart = document.getElementById('pnlChart');
+            const positionsChart = document.getElementById('positionsChart');
+            const multiAxisChart = document.getElementById('multiAxisChart');
+
+            // Check charts exist
+            if (!pnlChart || !positionsChart) return;
+
+            chartsSynced = true;
+            let pnlUpdating = false;
+            let positionsUpdating = false;
+            let multiAxisUpdating = false;
+
+            // Sync from PnL to other charts
+            pnlChart.on('plotly_relayout', function(eventdata) {
+                if (pnlUpdating || positionsUpdating || multiAxisUpdating) return;
+                pnlUpdating = true;
+
+                try {
+                    if (eventdata['xaxis.range[0]'] !== undefined) {
+                        const xrange = [eventdata['xaxis.range[0]'], eventdata['xaxis.range[1]']];
+                        Plotly.relayout(positionsChart, {'xaxis.range': xrange});
+                        if (multiAxisChart) {
+                            Plotly.relayout(multiAxisChart, {'xaxis.range': xrange});
+                        }
+                    } else if (eventdata['xaxis.autorange']) {
+                        Plotly.relayout(positionsChart, {'xaxis.autorange': true});
+                        if (multiAxisChart) {
+                            Plotly.relayout(multiAxisChart, {'xaxis.autorange': true});
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error syncing charts:', e);
+                } finally {
+                    setTimeout(() => { pnlUpdating = false; }, 100);
+                }
+            });
+
+            // Sync from Positions to other charts
+            positionsChart.on('plotly_relayout', function(eventdata) {
+                if (positionsUpdating || pnlUpdating || multiAxisUpdating) return;
+                positionsUpdating = true;
+
+                try {
+                    if (eventdata['xaxis.range[0]'] !== undefined) {
+                        const xrange = [eventdata['xaxis.range[0]'], eventdata['xaxis.range[1]']];
+                        Plotly.relayout(pnlChart, {'xaxis.range': xrange});
+                        if (multiAxisChart) {
+                            Plotly.relayout(multiAxisChart, {'xaxis.range': xrange});
+                        }
+                    } else if (eventdata['xaxis.autorange']) {
+                        Plotly.relayout(pnlChart, {'xaxis.autorange': true});
+                        if (multiAxisChart) {
+                            Plotly.relayout(multiAxisChart, {'xaxis.autorange': true});
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error syncing charts:', e);
+                } finally {
+                    setTimeout(() => { positionsUpdating = false; }, 100);
+                }
+            });
+
+            // Sync from multiAxisChart to other charts
+            if (multiAxisChart) {
+                multiAxisChart.on('plotly_relayout', function(eventdata) {
+                    if (multiAxisUpdating || pnlUpdating || positionsUpdating) return;
+                    multiAxisUpdating = true;
+
+                    try {
+                        if (eventdata['xaxis.range[0]'] !== undefined) {
+                            const xrange = [eventdata['xaxis.range[0]'], eventdata['xaxis.range[1]']];
+                            Plotly.relayout(pnlChart, {'xaxis.range': xrange});
+                            Plotly.relayout(positionsChart, {'xaxis.range': xrange});
+                        } else if (eventdata['xaxis.autorange']) {
+                            Plotly.relayout(pnlChart, {'xaxis.autorange': true});
+                            Plotly.relayout(positionsChart, {'xaxis.autorange': true});
+                        }
+                    } catch (e) {
+                        console.error('Error syncing charts:', e);
+                    } finally {
+                        setTimeout(() => { multiAxisUpdating = false; }, 100);
+                    }
+                });
+            }
+        }
+        
+        function calculateStatistics(selectedProducts) {
+            const statisticsPanel = document.getElementById('statisticsPanel');
+            statisticsPanel.innerHTML = '';
+            
+            // Calculate total P&L across all selected products
+            const totalPnLValues = new Array(gameRecordData.length).fill(0);
+            let finalPnL = 0;
+            
+            selectedProducts.forEach(product => {
+                const { pnl } = calculatePnL(product, gameRecordData);
+                pnl.forEach((value, idx) => {
+                    totalPnLValues[idx] += value;
+                });
+                finalPnL = totalPnLValues[totalPnLValues.length - 1];
+            });
+            
+            // Calculate returns
+            const returns = [];
+            for (let i = 1; i < totalPnLValues.length; i++) {
+                if (totalPnLValues[i-1] !== 0) {
+                    returns.push((totalPnLValues[i] - totalPnLValues[i-1]) / Math.abs(totalPnLValues[i-1]));
+                } else {
+                    returns.push(0);
+                }
+            }
+            
+            // Calculate P&L per 1000 timestamps
+            const totalTimestamps = totalPnLValues.length;
+            const pnlPer1000 = totalTimestamps > 0 ? (finalPnL / totalTimestamps * 1000).toFixed(2) : '0.00';
+            
+            // Calculate max drawdown in dollar terms
+            const maxDrawdownDollar = calculateMaxDrawdownDollar(totalPnLValues);
+            
+            // Calculate statistics
+            const stats = {
+                'Total P&L': formatNumber(finalPnL.toFixed(2)),
+                'Max Drawdown': '-$' + formatNumber(maxDrawdownDollar.toFixed(2)),
+                'P&L per 1000 timestamps': formatNumber(pnlPer1000)
+            };
+            
+            // Display statistics
+            Object.entries(stats).forEach(([label, value]) => {
+                const statItem = document.createElement('div');
+                statItem.className = 'stat-item';
+                
+                let valueClass = 'stat-value';
+                if (label === 'Total P&L' || label === 'P&L per 1000 timestamps') {
+                    const numValue = parseFloat(value.replace(/[$,]/g, ''));
+                    if (numValue > 0) valueClass += ' positive';
+                    else if (numValue < 0) valueClass += ' negative';
+                } else if (label === 'Max Drawdown') {
+                    // Max drawdown is always negative (bad), so highlight it
+                    valueClass += ' negative';
+                }
+                
+                statItem.innerHTML = `
+                    <div class="stat-label">${label}</div>
+                    <div class="${valueClass}">${value}</div>
+                `;
+                
+                statisticsPanel.appendChild(statItem);
+            });
+        }
+        
+        function calculateMaxDrawdownDollar(pnlValues) {
+            if (pnlValues.length === 0) return 0;
+            let maxDrawdown = 0;
+            let peak = pnlValues[0];
+            
+            for (let i = 1; i < pnlValues.length; i++) {
+                if (pnlValues[i] > peak) {
+                    peak = pnlValues[i];
+                }
+                const drawdown = peak - pnlValues[i];
+                maxDrawdown = Math.max(maxDrawdown, drawdown);
+            }
+            
+            return maxDrawdown;
+        }
+        
+        function formatNumber(num) {
+            const parts = num.toString().split('.');
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            return parts.join('.');
+        }
+
+        // Auto-load functionality
+        function checkAutoLoad() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const shouldAutoLoad = urlParams.get('autoload') === 'true';
+
+            if (shouldAutoLoad) {
+                console.log('Auto-loading data files...');
+                autoLoadDataFiles();
+            }
+        }
+
+        async function autoLoadDataFiles() {
+            try {
+                // Show loading status
+                updateStatus('orderbookStatus', 'Loading...', true);
+                updateStatus('tradesStatus', 'Loading...', true);
+                updateStatus('gameRecordStatus', 'Loading...', true);
+
+                // Define the file paths relative to the HTML file
+                const filesToLoad = [
+                    { path: './log_orderbook_data.csv', type: 'orderbook', statusId: 'orderbookStatus' },
+                    { path: './log_trades_data.csv', type: 'trades', statusId: 'tradesStatus' },
+                    { path: './log_game_record.csv', type: 'gameRecord', statusId: 'gameRecordStatus' }
+                ];
+
+                // Load all files
+                const loadPromises = filesToLoad.map(async (fileInfo) => {
+                    try {
+                        // Add cache-busting parameter
+                        const cacheBuster = Date.now();
+                        const urlWithCacheBuster = `${fileInfo.path}?_=${cacheBuster}`;
+                        const response = await fetch(urlWithCacheBuster, {
+                            cache: 'no-cache',
+                            headers: {
+                                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                                'Pragma': 'no-cache',
+                                'Expires': '0'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+
+                        const csvText = await response.text();
+                        const csvData = parseCSV(csvText);
+
+                        // Store data based on type
+                        switch(fileInfo.type) {
+                            case 'orderbook':
+                                orderbookData = csvData;
+                                updateStatus(fileInfo.statusId, `${csvData.length} rows`);
+                                extractProductsFromOrderbook(csvData);
+                                break;
+                            case 'trades':
+                                tradesData = csvData;
+                                updateStatus(fileInfo.statusId, `${csvData.length} rows`);
+                                extractProductsFromTrades(csvData);
+                                break;
+                            case 'gameRecord':
+                                gameRecordData = csvData;
+                                updateStatus(fileInfo.statusId, `${csvData.length} rows`);
+                                extractProductsFromGameRecord(csvData);
+                                break;
+                        }
+
+                        console.log(`Successfully loaded ${fileInfo.type}: ${csvData.length} rows`);
+                        return { success: true, type: fileInfo.type };
+
+                    } catch (error) {
+                        console.warn(`Failed to load ${fileInfo.type}:`, error);
+                        updateStatus(fileInfo.statusId, 'Not found', false);
+                        return { success: false, type: fileInfo.type, error };
+                    }
+                });
+
+                const results = await Promise.all(loadPromises);
+
+                // Update product dropdown after all files are processed
+                updateProductDropdown();
+
+                // Show analytics if game record was loaded successfully
+                const gameRecordLoaded = results.some(r => r.type === 'gameRecord' && r.success);
+                if (gameRecordLoaded && availableProducts.size > 0) {
+                    showAnalytics();
+                }
+
+                // Auto-select first product if available
+                const productSelect = document.getElementById('productSelect');
+                if (availableProducts.size > 0 && productSelect.options.length > 1) {
+                    productSelect.selectedIndex = 1; // Select first product (index 0 is placeholder)
+                    productSelect.dispatchEvent(new Event('change'));
+                }
+
+                // Report results
+                const successCount = results.filter(r => r.success).length;
+                if (successCount === 0) {
+                    showError('Auto-load failed: No data files could be loaded. Files may not be generated yet.');
+                } else if (successCount < 3) {
+                    console.log(`Auto-load partial: ${successCount}/3 files loaded successfully`);
+                } else {
+                    console.log('Auto-load complete: All files loaded successfully');
+                    hideError();
+                }
+
+            } catch (error) {
+                console.error('Auto-load error:', error);
+                showError(`Auto-load failed: ${error.message}`);
+            }
+        }
+
+        // Force cache clearing
+        function clearCache() {
+            if ('caches' in window) {
+                caches.keys().then(function(names) {
+                    names.forEach(function(name) {
+                        caches.delete(name);
+                    });
+                });
+            }
+
+            // Clear browser cache for this page
+            if (window.location.protocol === 'file:') {
+                // For file:// protocol, force reload
+                setTimeout(() => {
+                    window.location.reload(true);
+                }, 100);
+            }
+        }
+
+        // Add keyboard shortcut to clear cache and reload (Ctrl+Shift+R)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+                e.preventDefault();
+                clearCache();
+                window.location.reload(true);
+            }
+        });
+
+        // Check for auto-load when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // Clear any existing cache first
+            clearCache();
+            checkAutoLoad();
+        });
+    </script>
+</body>
+</html>
